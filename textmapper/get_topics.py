@@ -18,7 +18,7 @@ from gensim.models import CoherenceModel, LdaModel, LsiModel, HdpModel
 from gensim.models.wrappers import LdaMallet
 from gensim.corpora import Dictionary
 from gensim.models import Phrases
-from gensim.models.phrases import Phraser
+#from gensim.models.phrases import Phraser
 from gensim import corpora
 
 #import gensim.pyLDAvis
@@ -37,12 +37,16 @@ from spacy.lang.en.stop_words import STOP_WORDS  # import stop words from langua
 stop_words_getter = lambda token: token.is_stop or token.lower_ in STOP_WORDS or token.lemma_ in STOP_WORDS
 Token.set_extension('is_stop', getter=stop_words_getter)  # set attribute with getter
 
+#Spacy pipeline
+nlp = spacy.load('en')
+
 
 
 def build_corpus(doc_dir):
     """
     Extract topics given a folder location with one or more documents
     """
+    
     #bigram = iter_bigram(document_loc)            
     corpus = TxtSubdirsCorpus(doc_dir) # create corpus
     
@@ -50,6 +54,9 @@ def build_corpus(doc_dir):
    
    
 def serialize_corpus(doc_dir, corpus_dir):
+    """
+    Serailize the corpus.
+    """
     corpus_name = 'corpus.mm'
     dict_name = 'corpus.dict'
     corpus = build_corpus(doc_dir)
@@ -62,6 +69,9 @@ def serialize_corpus(doc_dir, corpus_dir):
 
 
 def extract_topic_model(corpus, dictionary, model, num_topics):
+    """
+    Extract topic model
+    """
     if model == 'lsi':
         lsimodel = LsiModel(corpus=corpus, num_topics=num_topics, id2word=dictionary)
         return lsimodel
@@ -75,46 +85,7 @@ def extract_topic_model(corpus, dictionary, model, num_topics):
         return hdpmodel
     
 
-def iter_bigram(top_directory):
-    """
-    Iterate over all the documents to train the bigram
-    """
-    
-    #nlp = spacy.load("en")
-    #sentences = []
-    #bigram = gensim.models.Phrases(min_count = 1, threshold =2 )
-    
-    #bigram = Phrases(min_count=1, threshold=2)
-    bigram = gensim.models.Phrases( min_count = 20, threshold =10)
-        
-    # find all .txt documents, no matter how deep under top_directory
-    for root, dirs, files in os.walk(top_directory):
-        for fname in filter(lambda fname: fname.endswith('.txt'), files):
-            # read each document as one big string
-            document = open(os.path.join(root, fname)).read()
-            
-            tokens = gensim.utils.tokenize(document, lower=True, errors='ignore')
-            
-            #for i in tokens:
-            #    token_list.append(i)
-                       
-            #print(token_list)
-            #bigram = gensim.models.Phrases(token_list)
-            
-            #bigram_learn = bigram.learn_vocab(document.split())
-            #print(document.split())
-            #bigram.learn_vocab(document.split(),200)
-            
-            bigram.add_vocab(tokens)
-            print([w for w in bigram.vocab])
-#            for key in bigram.vocab.keys():
-#                print(key)
-#            
-            #print(c)
-            #print(dir(bigram))
-            #bigram.add_vocab(token_list)
-    #sent = [u'the', u'mayor', u'of', u'new', u'york', u'was', u'there']        
-    return bigram            
+         
 
 
 def iter_documents(top_directory):
@@ -122,10 +93,10 @@ def iter_documents(top_directory):
     Generator: iterate over all relevant documents, yielding one
     document (=list of utf8 tokens) at a time.
     """
-    #Spacy pipeline
-    nlp = spacy.load('en')
     
     
+    bigram = collect_bigram(top_directory)
+    view_bigram(bigram,6)
     # STOP WORDS
     custom_stop_words = 'The I We But It say ’s A An \'s'.split()
     
@@ -150,10 +121,13 @@ def iter_documents(top_directory):
             
 #            # implement bigram over the text
 #            bigram =iter_bigram(document_loc)
-#            text = bigram[text]
             
-            
-            
+            text = bigram[text]
+            #print(list(bigram[text])[:5])
+#            
+#            
+#            x = (list(bigram[text]))
+#            print([w for w in x if '_' in w])
 #            if (os.path.join(root,fname)) == 'D:/giant/computer/thesis/topic_model/testdata/eq_sm/eq_data\livemint_2018_01_12.txt':
 #                print(text)
             
@@ -185,10 +159,55 @@ class TxtSubdirsCorpus(object):
     
     
 
-
+def collect_bigram(top_directory):
+    """
+    Iterate over all the documents to train the bigram
+    """
+    # define bigram parameters
+    
+    
+    custom_stop_words = 'The I We But It say ’s A An \'s'.split()
+    
+    for word in custom_stop_words:
+        lex = nlp.vocab[word]
+        lex.is_stop = True
+        
+    texts = []
+     
+    # find all .txt documents, no matter how deep under top_directory
+    for root, dirs, files in os.walk(top_directory):
+        for fname in filter(lambda fname: fname.endswith('.txt'), files):
+            # read each document as one big string
+            document = open(os.path.join(root, fname)).read()
+            
+            # Create a doc object                        
+            doc = nlp(document)
+          
+            # Tokenize and remove punctuation, space and stop words
+            text = [token.lemma_ for token in doc if not token.is_punct and not token._.is_stop 
+                    and token.text != '\n' and not token.like_num
+                    and token.text != '\n\n' and re.match('[a-zA-Z\-][a-zA-Z\-]{2,}', token.lemma_)]
+            
+            # ************************
+            #bigram.add_vocab([text])
+            texts = texts + text
+           
+    
+    bigram = Phrases([texts], min_count=5, threshold=1)   
+    
+    
+    
+    return bigram   
             
 
-
+def view_bigram(bigram, num):
+    keys = bigram.vocab.keys()
+    values = bigram.vocab.values()
+    for k,v in zip(keys,values):
+        if v >= num and '_' in str(k):
+            print(k,v)
+    
+    
 
 ########## NEW TOPIC ######################
 #new_docs = ["Earthquake can be bad. Earthquake in Nepal. People in Nepal are rescued from buildings from Kathmandu "]
@@ -212,21 +231,26 @@ if __name__ == '__main__':
     
     prj_dir = 'D:/giant/computer/thesis/textmapper/sample/earthquake_nepal'
     text_data_dir = os.path.join(prj_dir,'textdata_sm')
+    
+    #bigram = Phrases(min_count=3, threshold=1)
+    #bigram = collect_bigram(text_data_dir)
+    
+    #bigrams_ = [b for b in bigram[sent] if b.count(' ') == 1]
+    #print(bigram.vocab)
+    
+    #sent = [u'the', u'mayor', u'of', u'new', u'york', u'was', u'there', u'new', u'york', u'new', u'york', u'new', u'york', u'new', u'york', u'new', u'york']
+    #sent = [u'the', u'mayor', u'of',u'new', u'york']
+    
+    #print(bigram[sent]) 
+    #view_bigram(bigram,6)
+    
+    # *******build corpus *************  #
     corpus = build_corpus(text_data_dir) # Build corpus from text data
-    
-    # location for serailized corpora
-    corpora_dir = os.path.join(prj_dir,'corpus_dir')
-    if not os.path.exists(corpora_dir):
-        os.makedirs(corpora_dir)
-    corpora.MmCorpus.serialize(os.path.join(corpora_dir,'SeralizedCorpus.mm'),corpus) # seraialize the corpus
-    topic_model  = extract_topic_model(corpus, 'lsi', 10)
-    pprint.pprint(topic_model.print_topics())
-    
-    #pprint.pprint(extract_topics(document_loc))
-    #bigram = iter_bigram('D:/giant/computer/thesis/topic_model/testdata/eq_sm')            
-    #my_corpus = TxtSubdirsCorpus('D:/giant/computer/thesis/topic_model/testdata/eq_sm')
-    #corpora.MmCorpus.serialize('D:/giant/computer/thesis/topic_model/testdata/eq_sm/my_corpus.mm', my_corpus)
-    #dictionary = my_corpus.dictionary
-    #lsimodel = LsiModel(corpus=my_corpus, num_topics=10, id2word=dictionary)
-    #pprint.pprint(lsimodel.show_topics(num_topics=5))
+    dictionary = corpus.dictionary
+   
+        
+    topic_model  = extract_topic_model(corpus = corpus, model ='lda', num_topics = 10, dictionary=dictionary)
+    pprint.pprint(topic_model.show_topics())
+#    
+# 
     
