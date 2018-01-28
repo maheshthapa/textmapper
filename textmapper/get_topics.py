@@ -96,7 +96,7 @@ def iter_documents(top_directory):
     
     
     bigram = collect_bigram(top_directory)
-    view_bigram(bigram,6)
+    #view_bigram(bigram,5)
     # STOP WORDS
     custom_stop_words = 'The I We But It say ’s A An \'s'.split()
     
@@ -193,18 +193,19 @@ def collect_bigram(top_directory):
             texts = texts + text
            
     
-    bigram = Phrases([texts], min_count=5, threshold=1)   
+    bigram = Phrases([texts], min_count=5, threshold=1)  
+    trigram = Phrases([bigram[texts]], min_count=5, threshold=1)
     
     
     
-    return bigram   
+    return trigram 
             
 
 def view_bigram(bigram, num):
     keys = bigram.vocab.keys()
     values = bigram.vocab.values()
     for k,v in zip(keys,values):
-        if v >= num and '_' in str(k):
+        if v >= num and '_' in str(k): #and str(k).count('_')>1:
             print(k,v)
     
     

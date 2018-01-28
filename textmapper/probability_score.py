@@ -36,7 +36,7 @@ def fill_list(feature, topic_probability,topic_model):
 def topic_score(data_file, output_json_file, output_js_file, topic_model_file,dictionary_file):
     """
     Creates a new file with probability score of each topic.
-    data_file = existing geojson file
+    data_file = existing geojson file of all geoparsed locations in text
     data_score_file = new file 
     """
     # Create a new file for writing the geosjson file with topic_probability
@@ -60,14 +60,22 @@ def topic_score(data_file, output_json_file, output_js_file, topic_model_file,di
     
     # Add the list of  topic probability to feature key
     for feature in data['features']:
-        loc_term = (feature['properties']['name']).lower() # get the name of the location and in lower case
-        if dictionary.token2id.get(loc_term,0): # if does not exits, defaults to 0
+         # get name of location, lower the case, replace space by underscore
+        loc_term = (feature['properties']['name']).lower().replace(" ", "_")
+        print(loc_term)
+        if dictionary.token2id.get(loc_term,-1) != -1:
+            # if exists, extract probability
+            # get method gives default 0 if does not exist
+            #print(dictionary.token2id.get(loc_term), ' : CORRECT')
+            print(dictionary.token2id[loc_term])
             
             topic_probability = topic_model.get_term_topics(loc_term, 0)
             topic_probability = fill_list(feature, topic_probability,topic_model)
             feature["topic_probability"] = topic_probability
-            print(feature['topic_probability'])
+            #print(feature['topic_probability'])
         else:
+            # if does not exist
+            print('NO')
             topic_probability = [(w,0) for w in range(num_topics)]
             feature["topic_probability"] = topic_probability
             
