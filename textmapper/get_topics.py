@@ -77,7 +77,10 @@ def extract_topic_model(corpus, dictionary, model, num_topics):
         return lsimodel
     
     elif model == 'lda':
-        ldamodel = LdaModel(corpus = corpus, id2word=dictionary, num_topics= num_topics)
+        ldamodel = LdaModel(corpus = corpus, id2word=dictionary, \
+                            alpha='auto', eta='auto', \
+                            iterations=800, num_topics= num_topics, \
+                            passes = 20, eval_every= None)
         return ldamodel
     
     elif model == 'hdp':
@@ -193,8 +196,8 @@ def collect_bigram(top_directory):
             texts = texts + text
            
     
-    bigram = Phrases([texts], min_count=5, threshold=1)  
-    trigram = Phrases([bigram[texts]], min_count=5, threshold=1)
+    bigram = Phrases([texts], min_count=10, threshold=10)  
+    trigram = Phrases([bigram[texts]], min_count=10, threshold=10)
     
     
     

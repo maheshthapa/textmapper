@@ -26,7 +26,22 @@ def rename_file(top_dir):
 #                print(os.path.join(doc,fname + '.txt'))
 #                os.rename(doc,os.path.join(doc,fname + '.txt'))
 
+def filter_link(top_dir):
+    g = open(os.path.join(top_dir,'all_links.txt'),'w+')
+    for root, dirs, files in os.walk(top_dir):
+            for fname in filter(lambda fname: fname.endswith(''), files):
+                #
+                f = open(os.path.join(root,fname),'r')
+                for line in f:
+                    if len(line.strip()) != 0:
+                        if 'google' not in line and 'youtube' not in line and 'blogger' not in line:
+                            g.write(fname[:-5] + ' ' + line)
+                f.close()
+    g.close()
+    
+
 
 top_dir = r'D:\giant\computer\thesis\textmapper\sample\earthquake_nepal\textdata'
+#filter_link(top_dir)
 delete_file(top_dir)
 #rename_file(top_dir)
