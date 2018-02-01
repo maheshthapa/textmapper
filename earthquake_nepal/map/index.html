@@ -10,25 +10,11 @@
   
   <link rel="stylesheet" type="text/css" href="css/pagestyle.css">
 
-  
-  
-  
-   <!--<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
- <link rel="stylesheet" href="/resources/demos/style.css"> 
-  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
-  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>-->
-  
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css"
-  integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ=="
-  crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"
-  integrity="sha512-/Nsx9X4HebavoBvEBuyp3I7od5tA0UzAxs+j83KgC8PU0kgB4XiK4Lfe4y4cgBtaRJQEIFCW+oC506aPT2L1zw=="
-  crossorigin=""></script>
-    
-  
+  <link rel="stylesheet" href="css/leaflet/leaflet.css"/>
+   
+  <script src="js/leaflet/leaflet.js"></script>
   <script src="js/leaflet/leaflet-heat.js"></script>
   <script type="text/javascript" src="data/geo_prob_data.js"></script>
-  <script type="text/javascript" src="data/topics.js"></script>
    
 
  
@@ -38,93 +24,52 @@
 <div id="maptitle"> 
 Map Title
 </div>
-    
-Topic Term: <div id="topic_terms"></div>    
-<!-- Topic Number -->
-	<form id="topic_form">
-		Topic Number:  <input type="text" name="topic_num" value="0">
-		<input type="button" Value="Display Map"      onclick="ShowMap(this.form)">
-		<br><br>
-             
-	</form> 
-<br>
-<!-- <input type="button" Value="Remove Map" onclick="RemoveMap()"> -->
 <div id="mapid">
 
 </div>
 <script>
-    
-function ShowMap(form){
-    
-    if (map.hasLayer(heat) == true){
-        console.log("true");
-    };
-    // Read the topic number from the text box
-    topic_number = parseInt(form.topic_num.value);
-    
-    //Read topic terms
-    document.getElementById('topic_terms').innerHTML = topics[topic_number];
-    
-    var heatlayer_data = [];
-    intensity_factor = 1;
-    for (i = 0; i < geojsonFeature.length; i++) {
-        element = geojsonFeature[i]
-        entity = [];
-        lon = element["geometry"]["coordinates"][0]
-        lat = element["geometry"]["coordinates"][1]
-        intensity = element["topic_probability"][topic_number][1] * intensity_factor;
-        //console.log(intensity)
-        entity = [lat,lon, intensity]
-        heatlayer_data.push(entity)
-    }
-    
-    
-    if (map.hasLayer(heat)){
-        console.log("yesss")
-    };
-    
-    var heat = L.heatLayer(	heatlayer_data, {radius: 25, minOpacity: 0.4, max:1 }).addTo(map);
-    
-    //gradiant:{0.0: 'blue', 0.65: 'red', 1: 'red'}
-    //console.log(heat._leaflet_id);
-    
-}
-
-
-
 var map = L.map('mapid').setView([0, 0],2);
 
 L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}', {foo: 'bar'}).addTo(map);
 
 geojsonFeature = geoobjects["features"]
 
+
 var geojsonMarkerOptions = {
-    radius: 3,
+    radius: 8,
     fillColor: "#ff7800",
     color: "#000",
     weight: 1,
     opacity: 1,
-    fillOpacity: 0.4
+    fillOpacity: 0.8
 };
 
+topic_number = 19;
     
-var points = L.geoJSON(geojsonFeature, {
+console.log(geojsonFeature.length);
+
+var heatlayer_data = [];
+for (i = 0; i < geojsonFeature.length; i++) {
+    element = geojsonFeature[i]
+    entity = [];
+    lon = element["geometry"]["coordinates"][0]
+    lat = element["geometry"]["coordinates"][1]
+    intensity = element["topic_probability"][topic_number][1] / 0.2
+    entity = [lat,lon, intensity]
+    heatlayer_data.push(entity)
+    console.log(heatlayer_data)
+    
+}
+    
+
+    
+var heat = L.heatLayer(	heatlayer_data, {radius: 25, minOpacity: 0.5}).addTo(map);
+    
+L.geoJSON(geojsonFeature, {
     pointToLayer: function (feature, latlng) {
         return L.circleMarker(latlng, geojsonMarkerOptions);
     }
 }).addTo(map);
-
-/*
-function RemoveMap(){
-    map.eachLayer(function (layer) {
-    if (map.hasLayer(heat) == true){
-        map.removeLayer(layer);
-    }
-});
-    };
-*/
-    
-
 
 
 
